@@ -1,10 +1,16 @@
 #include <ros/ros.h>
-#include <geometry_msgs/Twist.h>
 #include <selfie_drone/MsgState.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <tf2/LinearMath/Quaternion.h>
+#include <swarm_ctrl_pkg/srvMultiSetpointLocal.h>
 #include <pid.h>
 
+geometry_msgs::PoseStamped pose;
 tf2::Vector3 current;
+
+void poseCB(const geometry_msgs::PoseStamped::ConstPtr &msg){
+    pose = *msg;
+}
 
 void errCB(const selfie_drone::MsgState::ConstPtr &msg){
     current.setX(msg->box_size);
@@ -17,8 +23,9 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "selfie_pid");
     ros::NodeHandle nh;
 
-    ros::Publisher vel_pub = nh.advertise<geometry_msgs::Twist>("/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
+    ros::Subscriber pose_sub = nh.subscribe("/camila1/mavros/local_position/pose", 10, &poseCB);
     ros::Subscriber err_sub = nh.subscribe("/centroid", 10, &errCB);
+    ros::ServiceClient goto_client = nh.serviceClient<swarm_ctrl_pkg::srvMultiSetpointLocal>("/swarm_node/multi_setpoint_local");
     ros::Rate rate(10);
 
     PIDController<tf2::Vector3> pid;
@@ -30,14 +37,19 @@ int main(int argc, char **argv){
     target.setY(0.5);
     target.setZ(0.618);
 
-    geometry_msgs::Twist twist;
-
     while( ros::ok() ){
         control_value = pid.calculate(target, current);
-        twist.linear.x = control_value.getX();
-        twist.linear.y = control_value.getY();
-        twist.linear.z = control_value.getZ();
+        swarm_ctrl_pkg::srvMultiSetpointLocal msg;
+        msg.request.formation = "POINT";
+        msg.request.x = pose.pose.position.x + control_value.getX();
+        msg.request.y = pose.pose.position.y + control_value.getY();
+        msg.request.z = pose.pose.position.z + control_value.getZ();
 
+        if (goto_client.call(msg) && msg.response.success)
+            ;
+        else
+            ROS_ERROR("Failed to call multi_setpoint_local service.");
+        
         ros::spinOnce();
         rate.sleep();
     }
