@@ -30,7 +30,6 @@ int main(int argc, char **argv){
 
     PIDController<tf2::Vector3> pid;
     pid.setDt(0.1);
-    pid.setKp(1.0);
 
     tf2::Vector3 target, control_value;
     target.setX(0.3);
@@ -38,6 +37,14 @@ int main(int argc, char **argv){
     target.setZ(0.618);
 
     while( ros::ok() ){
+        double kp, ki, kd;
+        nh.getParam("pid/kp", kp);
+        nh.getParam("pid/ki", ki);
+        nh.getParam("pid/kd", kd);
+        pid.setKp(kp);    
+        pid.setKi(ki);    
+        pid.setKd(kd);    
+
         control_value = pid.calculate(target, current);
         swarm_ctrl_pkg::srvMultiSetpointLocal msg;
         msg.request.formation = "POINT";
