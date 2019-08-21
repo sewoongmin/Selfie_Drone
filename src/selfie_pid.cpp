@@ -1,9 +1,9 @@
 #include <ros/ros.h>
-#include <selfie_drone/MsgState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <swarm_ctrl_pkg/srvMultiSetpointLocal.h>
 #include <pid.h>
+#include <tensorflow_object_detector/MsgState.h>
 
 geometry_msgs::PoseStamped pose;
 tf2::Vector3 current;
@@ -12,7 +12,7 @@ void poseCB(const geometry_msgs::PoseStamped::ConstPtr &msg){
     pose = *msg;
 }
 
-void errCB(const selfie_drone::MsgState::ConstPtr &msg){
+void errCB(const tensorflow_object_detector::MsgState::ConstPtr &msg){
     current.setX(msg->box_size);
     current.setY(msg->x_mid);
     current.setZ(msg->y_mid);
@@ -24,15 +24,15 @@ int main(int argc, char **argv){
     ros::NodeHandle nh;
 
     ros::Subscriber pose_sub = nh.subscribe("/camila1/mavros/local_position/pose", 10, &poseCB);
-    ros::Subscriber err_sub = nh.subscribe("/centroid", 10, &errCB);
-    ros::ServiceClient goto_client = nh.serviceClient<swarm_ctrl_pkg::srvMultiSetpointLocal>("/swarm_node/multi_setpoint_local");
+    ros::Subscriber err_sub = nh.subscribe("/data_state", 10, &errCB);
+    ros::ServiceClient goto_client = nh.serviceClient<swarm_ctrl_pkg::srvMultiSetpointLocal>("/multi_setpoint_local");
     ros::Rate rate(10);
 
     PIDController<tf2::Vector3> pid;
     pid.setDt(0.1);
 
     tf2::Vector3 target, control_value;
-    target.setX(0.3);
+    target.setX(0.07);
     target.setY(0.5);
     target.setZ(0.618);
 
