@@ -3,7 +3,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <swarm_ctrl_pkg/srvMultiSetpointLocal.h>
 #include <pid.h>
-#include <tensorflow_object_detector/MsgState.h>
+#include <selfie_drone/MsgState.h>
 
 geometry_msgs::PoseStamped pose;
 tf2::Vector3 current;
@@ -12,7 +12,7 @@ void poseCB(const geometry_msgs::PoseStamped::ConstPtr &msg){
     pose = *msg;
 }
 
-void errCB(const tensorflow_object_detector::MsgState::ConstPtr &msg){
+void errCB(const selfie_drone::MsgState::ConstPtr &msg){
     current.setX(msg->box_size);
     current.setY(msg->x_mid);
     current.setZ(msg->y_mid);

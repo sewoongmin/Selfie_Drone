@@ -1,0 +1,6 @@
+<launch>
+    <arg name="config_yaml" default="$(find selfie_drone)/config/config.yaml" />
+    <node name="selfie_pid" pkg="selfie_drone" type="selfie_pid" output="screen" respawn="true">
+        <rosparam command="load" file="$(arg config_yaml)"/>
+    </node>
+</launch>
